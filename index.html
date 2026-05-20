@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JS FACTORY — Control de Pruebas de Campo</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#001428;--navy2:#002050;--gold:#d4a017;--gold2:#f0c030;
+  --danger:#e53e3e;--success:#22c55e;--warn:#f59e0b;--info:#3b82f6;
+  --purple:#8b5cf6;--teal:#14b8a6;
+  --bg:#eef2f7;--card:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;
+  --radius:10px;--shadow:0 4px 22px rgba(0,0,0,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow:hidden}
+body.ready{padding-top:62px;overflow:auto}
+h1,h2,h3,h4,h5,h6{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px}
+
+/* ===== TOPBAR ===== */
+#topbar{position:fixed;top:0;left:0;right:0;height:62px;background:linear-gradient(90deg,var(--navy) 0%,#002868 100%);display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:9999;box-shadow:0 3px 18px rgba(0,0,0,.45)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-svg{width:42px;height:42px;flex-shrink:0}
+.logo-txt{font-family:'Barlow Condensed',sans-serif;font-size:1.55rem;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:1.5px;line-height:1}
+.logo-txt span{color:var(--gold)}
+.logo-sub{font-size:.65rem;color:rgba(255,255,255,.45);font-weight:500;letter-spacing:.5px;margin-top:1px}
+.top-right{display:flex;align-items:center;gap:14px;flex-wrap:nowrap}
+.live-badge{display:flex;align-items:center;gap:5px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);color:#22c55e;font-size:.7rem;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.live-dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:blink 1.1s infinite}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+.proj-tag{background:rgba(212,160,23,.15);border:1px solid rgba(212,160,23,.4);color:var(--gold);font-size:.7rem;font-weight:700;padding:4px 12px;border-radius:20px;text-transform:uppercase;white-space:nowrap}
+.clock-box{text-align:right}
+.clock-val{font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:700;color:#fff;line-height:1}
+.clock-loc{font-size:.6rem;color:rgba(255,255,255,.4);letter-spacing:.5px}
+
+/* ===== SIDEBAR ===== */
+#sidebar{position:fixed;top:62px;left:0;bottom:0;width:228px;background:var(--navy2);z-index:800;overflow-y:auto;display:flex;flex-direction:column;padding:14px 0;border-right:1px solid rgba(255,255,255,.04)}
+.sb-section{padding:10px 16px 4px;color:rgba(255,255,255,.3);font-size:.6rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase}
+.sb-item{display:flex;align-items:center;gap:9px;padding:10px 18px;cursor:pointer;color:rgba(255,255,255,.62);font-size:.87rem;font-weight:500;border-left:3px solid transparent;transition:.2s;user-select:none}
+.sb-item i{width:17px;text-align:center;font-size:.9rem;flex-shrink:0}
+.sb-item:hover{color:#fff;background:rgba(255,255,255,.06)}
+.sb-item.active{color:var(--gold);border-left-color:var(--gold);background:rgba(212,160,23,.1)}
+.sb-chip{margin-left:auto;border-radius:10px;font-size:.62rem;font-weight:700;padding:2px 7px;min-width:20px;text-align:center}
+.sc-green{background:rgba(34,197,94,.25);color:#4ade80}
+.sc-red{background:rgba(229,62,62,.25);color:#f87171}
+.sc-gold{background:rgba(212,160,23,.2);color:var(--gold)}
+
+/* ===== MAIN ===== */
+#main{margin-left:228px;padding:22px;min-height:calc(100vh - 62px)}
+.page{display:none;animation:fadeUp .28s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+.page-title{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.page-title h2{font-size:1.7rem;color:var(--navy);font-weight:900;line-height:1}
+.icon-badge{width:40px;height:40px;background:var(--navy);display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--gold);font-size:1.05rem;flex-shrink:0}
+.ptag{margin-left:auto;background:rgba(0,20,40,.07);color:var(--navy);font-size:.68rem;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+
+/* ===== GRIDS ===== */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.gc2{grid-column:span 2}
+.gc3{grid-column:span 3}
+.mb16{margin-bottom:16px}
+
+/* ===== SUMMARY STRIP ===== */
+.strip{background:linear-gradient(135deg,#001428 0%,#002868 60%,#001e4a 100%);border-radius:var(--radius);padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:0 6px 28px rgba(0,20,40,.2);border:1px solid rgba(212,160,23,.2)}
+.strip h3{font-family:'Barlow Condensed',sans-serif;font-size:1.45rem;font-weight:900;color:#fff;letter-spacing:.5px;line-height:1.1}
+.strip .smeta{color:rgba(255,255,255,.5);font-size:.75rem;margin-top:4px}
+.strip .samount{font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:900;color:var(--gold);line-height:1}
+.strip .slabel{color:rgba(255,255,255,.4);font-size:.65rem;text-transform:uppercase;letter-spacing:.5px}
+
+/* ===== KPI ===== */
+.kpi{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;border-top:4px solid var(--navy);position:relative;overflow:hidden;transition:.2s}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.1)}
+.kpi::before{content:'';position:absolute;bottom:-15px;right:-15px;width:70px;height:70px;border-radius:50%;background:rgba(0,0,0,.025)}
+.kl{font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.8px;margin-bottom:4px}
+.kv{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;line-height:1;color:var(--navy)}
+.ksub{font-size:.7rem;color:var(--muted);margin-top:3px}
+.kt{display:flex;align-items:center;gap:4px;font-size:.7rem;font-weight:700;margin-top:5px}
+.kt.up{color:var(--success)}.kt.down{color:var(--danger)}.kt.neu{color:var(--warn)}
+.kpi.green{border-top-color:var(--success)}.kpi.gold{border-top-color:var(--gold)}
+.kpi.red{border-top-color:var(--danger)}.kpi.blue{border-top-color:var(--info)}
+.kpi.purple{border-top-color:var(--purple)}.kpi.teal{border-top-color:var(--teal)}
+
+/* ===== CARDS ===== */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden}
+.ch{background:var(--navy);color:#fff;padding:11px 15px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;border-bottom:2px solid var(--gold);display:flex;align-items:center;justify-content:space-between;letter-spacing:.5px;gap:8px}
+.ch .chl{display:flex;align-items:center;gap:7px}
+.ch i{color:var(--gold);font-size:.9rem}
+.cb{padding:15px}
+.cb.p0{padding:0}
+
+/* ===== BADGES ===== */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.bg-green{background:rgba(34,197,94,.12);color:#15803d;border:1px solid rgba(34,197,94,.3)}
+.bg-red{background:rgba(229,62,62,.12);color:#b91c1c;border:1px solid rgba(229,62,62,.3)}
+.bg-gold{background:rgba(212,160,23,.12);color:#92400e;border:1px solid rgba(212,160,23,.3)}
+.bg-blue{background:rgba(59,130,246,.12);color:#1d4ed8;border:1px solid rgba(59,130,246,.3)}
+.bg-purple{background:rgba(139,92,246,.12);color:#6d28d9;border:1px solid rgba(139,92,246,.3)}
+.bg-gray{background:rgba(100,116,139,.1);color:var(--muted);border:1px solid var(--border)}
+.bg-navy{background:var(--navy);color:#fff}
+.bg-teal{background:rgba(20,184,166,.12);color:#0f766e;border:1px solid rgba(20,184,166,.3)}
+
+/* ===== STATUS DOTS ===== */
+.sd{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0;vertical-align:middle}
+.sd-g{background:var(--success);box-shadow:0 0 0 3px rgba(34,197,94,.2);animation:pg 2s infinite}
+.sd-r{background:var(--danger);box-shadow:0 0 0 3px rgba(229,62,62,.15)}
+.sd-y{background:var(--warn);box-shadow:0 0 0 3px rgba(245,158,11,.2);animation:py 2s infinite}
+.sd-b{background:var(--info);box-shadow:0 0 0 3px rgba(59,130,246,.2);animation:pb 2s infinite}
+@keyframes pg{0%,100%{box-shadow:0 0 0 3px rgba(34,197,94,.2)}50%{box-shadow:0 0 0 8px rgba(34,197,94,.08)}}
+@keyframes py{0%,100%{box-shadow:0 0 0 3px rgba(245,158,11,.2)}50%{box-shadow:0 0 0 8px rgba(245,158,11,.08)}}
+@keyframes pb{0%,100%{box-shadow:0 0 0 3px rgba(59,130,246,.2)}50%{box-shadow:0 0 0 8px rgba(59,130,246,.08)}}
+
+/* ===== PROGRESS ===== */
+.pb{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:5px}
+.pf{height:100%;border-radius:3px;transition:width .6s ease}
+.pf-g{background:var(--success)}.pf-r{background:var(--danger)}.pf-y{background:var(--warn)}
+.pf-b{background:var(--info)}.pf-go{background:var(--gold)}.pf-p{background:var(--purple)}
+
+/* ===== MACHINE CARD ===== */
+.mc{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:13px;border-top:3px solid #cbd5e1;transition:.2s}
+.mc:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.1)}
+.mc.running{border-top-color:var(--success)}
+.mc.warning{border-top-color:var(--warn)}
+.mc.stopped{border-top-color:var(--danger);opacity:.75}
+.mc-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:7px}
+.mc-id{font-size:.58rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.mc-name{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:800;color:var(--navy);text-transform:uppercase;line-height:1.1}
+.mc-op{font-size:.68rem;color:var(--muted);margin:4px 0 8px}
+.mc-model{font-size:.6rem;color:var(--muted);margin-bottom:8px;font-style:italic}
+.mc-stats{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.ms{background:#f8fafc;border-radius:6px;padding:6px 8px}
+.msl{font-size:.58rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.msv{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;color:var(--navy)}
+
+/* ===== INK BARS ===== */
+.ink-row{display:flex;gap:5px;align-items:flex-end;height:64px}
+.ink-col{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1}
+.ink-wrap{width:20px;height:52px;background:#f0f4f8;border-radius:4px;overflow:hidden;border:1px solid var(--border);display:flex;align-items:flex-end}
+.ink-fill{width:100%;border-radius:4px;transition:height .9s ease}
+.ink-lbl{font-size:.52rem;font-weight:700;text-align:center;color:var(--muted);line-height:1.2}
+
+/* ===== TEMP DISPLAY ===== */
+.temp-board{background:linear-gradient(135deg,var(--navy),#002868);border-radius:10px;padding:18px;text-align:center;margin-bottom:12px;border:1px solid rgba(212,160,23,.2)}
+.temp-label{color:rgba(255,255,255,.45);font-size:.65rem;text-transform:uppercase;font-weight:700;letter-spacing:1px;margin-bottom:6px}
+.temp-num{font-family:'Barlow Condensed',sans-serif;font-size:3.8rem;font-weight:900;color:var(--gold);line-height:1}
+.temp-unit{font-size:.9rem;color:rgba(255,255,255,.5)}
+.temp-range{color:rgba(255,255,255,.4);font-size:.68rem;margin-top:6px}
+.temp-slider{height:10px;background:linear-gradient(to right,#3b82f6,#22c55e,#f59e0b,#ef4444);border-radius:5px;position:relative;margin:10px 0 3px}
+.temp-ptr{position:absolute;top:-5px;width:4px;height:20px;background:#fff;border-radius:2px;transition:left .6s ease;transform:translateX(-50%);box-shadow:0 0 8px rgba(255,255,255,.5)}
+.temp-ticks{display:flex;justify-content:space-between;font-size:.58rem;color:rgba(255,255,255,.3)}
+
+/* ===== ALERT ITEM ===== */
+.ali{display:flex;align-items:flex-start;gap:9px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ali:last-child{border-bottom:none}
+.ali-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.88rem}
+.ai-warn{background:rgba(245,158,11,.12);color:var(--warn)}
+.ai-ok{background:rgba(34,197,94,.12);color:var(--success)}
+.ai-err{background:rgba(229,62,62,.12);color:var(--danger)}
+.ai-info{background:rgba(59,130,246,.12);color:var(--info)}
+.ali-text{font-size:.8rem;color:var(--text);line-height:1.4;font-weight:500}
+.ali-meta{font-size:.67rem;color:var(--muted);margin-top:2px}
+
+/* ===== MISC ===== */
+.fw7{font-weight:700}
+.tg{color:var(--gold);font-weight:700}
+.ts{color:var(--success);font-weight:700}
+.td{color:var(--danger);font-weight:700}
+.tw{color:var(--warn);font-weight:700}
+.tm{color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+thead th{background:var(--navy);color:#fff;padding:10px 13px;text-align:left;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.5px;font-size:.88rem;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:.12s}
+tbody tr:hover{background:#f8fbfd}
+tbody td{padding:9px 13px;vertical-align:middle}
+.flex-between{display:flex;align-items:center;justify-content:space-between}
+canvas{display:block;max-height:220px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#f1f5f9}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+
+/* ===== GANTT-LIKE PROGRESS ===== */
+.proj-progress{background:#f8fafc;border-radius:8px;padding:12px;border:1px solid var(--border)}
+.pp-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.pp-label{width:110px;font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.3px;flex-shrink:0}
+.pp-bar-bg{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.pp-bar-fill{height:100%;border-radius:4px;transition:width .7s ease}
+.pp-pct{width:36px;font-size:.72rem;font-weight:700;text-align:right;flex-shrink:0}
+
+/* ===== SCAN LINE EFFECT ===== */
+@keyframes scanLine{0%{transform:translateY(-100%)}100%{transform:translateY(100vh)}}
+.scan-overlay{position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(to right,transparent,rgba(212,160,23,.4),transparent);animation:scanLine 6s linear infinite;pointer-events:none;z-index:99998}
+</style>
+</head>
+<body class="ready">
+<div class="scan-overlay"></div>
+
+<!-- ===== TOPBAR ===== -->
+<div id="topbar">
+  <div class="logo">
+    <svg class="logo-svg" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="42" height="42" rx="9" fill="#d4a017"/>
+      <rect x="3" y="3" width="36" height="36" rx="7" fill="url(#gld)"/>
+      <text x="21" y="26" text-anchor="middle" font-family="Barlow Condensed,sans-serif" font-weight="900" font-size="16" fill="#001428">JS</text>
+      <defs><linearGradient id="gld" x1="0" y1="0" x2="42" y2="42"><stop offset="0%" stop-color="#f0c030"/><stop offset="100%" stop-color="#b8860b"/></linearGradient></defs>
+    </svg>
+    <div>
+      <div class="logo-txt">JS <span>FACTORY</span></div>
+      <div class="logo-sub">Maquila de Sublimación — Tegucigalpa, HN</div>
+    </div>
+  </div>
+  <div class="top-right">
+    <div class="proj-tag"><i class="fas fa-flask"></i> Proyecto Control de Pruebas — L. 600,000.00</div>
+    <div class="live-badge"><div class="live-dot"></div> EN VIVO</div>
+    <div class="clock-box">
+      <div class="clock-val" id="clock-val">--:--:--</div>
+      <div class="clock-loc">Tegucigalpa · HN</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SIDEBAR ===== -->
+<div id="sidebar">
+  <div class="sb-section">General</div>
+  <div class="sb-item active" onclick="goPage('pg-dash',this)"><i class="fas fa-chart-line"></i> Dashboard General</div>
+  <div class="sb-item" onclick="goPage('pg-alertas',this)"><i class="fas fa-bell"></i> Alertas Activas <span class="sb-chip sc-red">3</span></div>
+
+  <div class="sb-section">Impresión</div>
+  <div class="sb-item" onclick="goPage('pg-plotters',this)"><i class="fas fa-print"></i> Plotters Epson <span class="sb-chip sc-green">2</span></div>
+
+  <div class="sb-section">Producción</div>
+  <div class="sb-item" onclick="goPage('pg-calandra',this)"><i class="fas fa-temperature-high"></i> Calandra Térmica</div>
+  <div class="sb-item" onclick="goPage('pg-laser',this)"><i class="fas fa-bolt"></i> Cortadora Láser</div>
+  <div class="sb-item" onclick="goPage('pg-confeccion',this)"><i class="fas fa-scissors"></i> Área Confección <span class="sb-chip sc-green">10</span></div>
+  <div class="sb-item" onclick="goPage('pg-etiquetado',this)"><i class="fas fa-tags"></i> Etiquetado / Empaque <span class="sb-chip sc-green">5</span></div>
+
+  <div class="sb-section">Registros</div>
+  <div class="sb-item" onclick="goPage('pg-pruebas',this)"><i class="fas fa-clipboard-list"></i> Registro Pruebas</div>
+  <div class="sb-item" onclick="goPage('pg-calidad',this)"><i class="fas fa-medal"></i> Control de Calidad</div>
+
+  <div style="margin-top:auto;padding:14px 16px;border-top:1px solid rgba(255,255,255,.07);margin-top:20px">
+    <div style="font-size:.62rem;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px">Supervisor General</div>
+    <div style="color:rgba(255,255,255,.75);font-size:.82rem;font-weight:600;margin-top:3px"><i class="fas fa-user-tie" style="color:var(--gold);margin-right:5px"></i>Carlos A. Maldonado</div>
+    <div style="font-size:.65rem;color:rgba(255,255,255,.35);margin-top:2px">Turno: 06:00 — 14:00 hrs</div>
+  </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div id="main">
+
+<!-- ===================== DASHBOARD ===================== -->
+<div id="pg-dash" class="page active">
+  <div class="strip">
+    <div>
+      <h3><i class="fas fa-industry" style="color:var(--gold);margin-right:8px"></i>Sistema de Control de Pruebas de Campo</h3>
+      <div class="smeta" id="date-strip">Cargando fecha...</div>
+      <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+        <span class="badge bg-green"><span class="sd sd-g"></span> 18 Equipos Activos</span>
+        <span class="badge bg-red"><span class="sd sd-r"></span> 1 En Mantenimiento</span>
+        <span class="badge bg-gold">19 Pruebas de Campo</span>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div class="slabel">Presupuesto del Proyecto</div>
+      <div class="samount">L. 600,000.00</div>
+      <div class="slabel" style="margin-top:4px">Inversión Total — Maquinaria y Validación</div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="g4">
+    <div class="kpi green">
+      <div class="kl"><i class="fas fa-shirt"></i> Piezas Producidas Hoy</div>
+      <div class="kv" id="kpi-piezas">1,847</div>
+      <div class="kt up"><i class="fas fa-arrow-trend-up"></i> +12.4% vs ayer</div>
+    </div>
+    <div class="kpi gold">
+      <div class="kl"><i class="fas fa-gauge-high"></i> Eficiencia General</div>
+      <div class="kv" id="kpi-efic">94.2<small style="font-size:1.1rem">%</small></div>
+      <div class="kt up"><i class="fas fa-arrow-up"></i> +1.8% esta semana</div>
+    </div>
+    <div class="kpi red">
+      <div class="kl"><i class="fas fa-triangle-exclamation"></i> Alertas Activas</div>
+      <div class="kv">3</div>
+      <div class="kt neu"><i class="fas fa-minus"></i> 2 Advertencias · 1 Error</div>
+    </div>
+    <div class="kpi blue">
+      <div class="kl"><i class="fas fa-server"></i> Máquinas en Ejecución</div>
+      <div class="kv">18<small style="font-size:1.1rem">/19</small></div>
+      <div class="kt neu"><i class="fas fa-wrench"></i> 1 En mantenimiento</div>
+    </div>
+  </div>
+
+  <!-- Charts Row 1 -->
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-chart-area"></i> Producción por Hora — Piezas/hr</div><span class="badge bg-green">EN VIVO</span></div>
+      <div class="cb"><canvas id="c-prod"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-chart-bar"></i> Eficiencia por Área (%)</div><span class="badge bg-blue">TIEMPO REAL</span></div>
+      <div class="cb"><canvas id="c-efic"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Charts Row 2 -->
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px">
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-chart-pie"></i> Índice de Calidad</div></div>
+      <div class="cb"><canvas id="c-cal" style="max-height:200px"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-thermometer-half"></i> Temperatura en Tiempo Real — °C</div><span class="badge bg-red">CRÍTICO</span></div>
+      <div class="cb"><canvas id="c-temp"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Progress por área + quick status -->
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-list-check"></i> Avance de Producción por Área</div></div>
+      <div class="cb">
+        <div class="proj-progress">
+          <div class="pp-row"><div class="pp-label">Impresión</div><div class="pp-bar-bg"><div class="pp-bar-fill pf-b" id="pp-imp" style="width:82%"></div></div><div class="pp-pct tg" id="pp-imp-v">82%</div></div>
+          <div class="pp-row"><div class="pp-label">Calandrado</div><div class="pp-bar-bg"><div class="pp-bar-fill pf-y" id="pp-cal" style="width:76%"></div></div><div class="pp-pct tg" id="pp-cal-v">76%</div></div>
+          <div class="pp-row"><div class="pp-label">Corte Láser</div><div class="pp-bar-bg"><div class="pp-bar-fill pf-g" id="pp-las" style="width:91%"></div></div><div class="pp-pct ts" id="pp-las-v">91%</div></div>
+          <div class="pp-row"><div class="pp-label">Confección</div><div class="pp-bar-bg"><div class="pp-bar-fill pf-go" id="pp-conf" style="width:69%"></div></div><div class="pp-pct tg" id="pp-conf-v">69%</div></div>
+          <div class="pp-row"><div class="pp-label">Etiquetado</div><div class="pp-bar-bg"><div class="pp-bar-fill pf-p" id="pp-etiq" style="width:58%"></div></div><div class="pp-pct tw" id="pp-etiq-v">58%</div></div>
+          <div class="pp-row"><div class="pp-label">Empaque</div><div class="pp-bar-bg"><div class="pp-bar-fill pf-g" id="pp-emp" style="width:53%"></div></div><div class="pp-pct tw" id="pp-emp-v">53%</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+          <div class="ms"><div class="msl">Turno Actual</div><div class="msv">Matutino 06–14h</div></div>
+          <div class="ms"><div class="msl">Meta del Día</div><div class="msv">2,400 pzas</div></div>
+          <div class="ms"><div class="msl">Tiempo Restante</div><div class="msv" id="tiempo-rest">01:58 hrs</div></div>
+          <div class="ms"><div class="msl">Costo/Pieza</div><div class="msv">L. 324.85</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-server"></i> Estado Rápido de Equipos</div><span id="last-upd" style="font-size:.65rem;color:rgba(255,255,255,.4)">●  Hace 2s</span></div>
+      <div class="cb p0">
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Prueba</th><th>Equipo</th><th>Área</th><th>Operador</th><th>Estado</th><th>Efic.</th><th>Pzas/hr</th></tr></thead>
+            <tbody id="quick-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ALERTAS ===================== -->
+<div id="pg-alertas" class="page">
+  <div class="page-title">
+    <div class="icon-badge"><i class="fas fa-bell"></i></div>
+    <h2>Alertas del Sistema</h2>
+    <span class="ptag">Tiempo Real · 19 Pruebas de Campo</span>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-exclamation-circle"></i> Alertas Activas</div><span class="badge bg-red">3 Activas</span></div>
+      <div class="cb" id="alerts-active"></div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-clock-rotate-left"></i> Historial Reciente</div><span class="badge bg-gray">5 Registros</span></div>
+      <div class="cb" id="alerts-hist"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PLOTTERS ===================== -->
+<div id="pg-plotters" class="page">
+  <div class="page-title">
+    <div class="icon-badge"><i class="fas fa-print"></i></div>
+    <h2>Plotters Epson — Área de Impresión Digital</h2>
+    <span class="ptag">Pruebas de Campo 1 y 2 — 2 Equipos</span>
+  </div>
+
+  <div class="g4">
+    <div class="kpi green"><div class="kl">M² Impresos Hoy</div><div class="kv" id="p-m2">847.3</div><div class="kt up"><i class="fas fa-arrow-up"></i>+5.2% vs ayer</div></div>
+    <div class="kpi gold"><div class="kl">Trabajos Completados</div><div class="kv" id="p-jobs">23</div><div class="kt neu"><i class="fas fa-layer-group"></i> 2 en cola</div></div>
+    <div class="kpi blue"><div class="kl">Velocidad Promedio</div><div class="kv" id="p-vel">38.4<small style="font-size:1rem">m²/h</small></div><div class="ksub">Nominal: 40 m²/h</div></div>
+    <div class="kpi"><div class="kl">Tinta Consumida</div><div class="kv" id="p-ink">12.4<small style="font-size:1rem">L</small></div><div class="kt down"><i class="fas fa-droplet"></i>Reponer C + M</div></div>
+  </div>
+
+  <div class="g2">
+    <!-- Plotter 1 -->
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-print"></i> PRUEBA DE CAMPO 1 — Epson SC-F9400H</div><span class="badge bg-green"><span class="sd sd-g"></span> Ejecutando</span></div>
+      <div class="cb">
+        <div class="flex-between mb16" style="align-items:flex-start;gap:12px">
+          <div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px">Operador</div><div class="fw7">Ana M. Perdomo</div><div class="tm" style="font-size:.7rem">Turno: 06:00 AM — 02:00 PM</div></div>
+          <div style="text-align:right"><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px">Trabajo Actual</div><div class="fw7">OP-2024-0841</div><div class="tm" style="font-size:.7rem">Uniformes Deporte Nacional HN</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+          <div class="ms"><div class="msl">Velocidad</div><div class="msv" id="p1-vel">41.8</div><div style="font-size:.58rem;color:var(--muted)">m²/hr</div></div>
+          <div class="ms"><div class="msl">Temp.</div><div class="msv" id="p1-tmp">38°C</div></div>
+          <div class="ms"><div class="msl">Progreso</div><div class="msv" id="p1-pg">67%</div></div>
+          <div class="ms"><div class="msl">Resolución</div><div class="msv">1440dpi</div></div>
+        </div>
+        <div style="font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:5px">Niveles de Tinta — Cian / Magenta / Amarillo / Negro / Naranja / Violeta</div>
+        <div class="ink-row" id="ink1"></div>
+        <div class="pb" style="height:8px;margin-top:10px"><div class="pf pf-go" id="pb1" style="width:67%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:.68rem;color:var(--muted)">Progreso del trabajo</span><span style="font-size:.68rem;font-weight:700;color:var(--gold)" id="p1-eta">ETA: 00:42 min</span></div>
+        <div style="margin-top:12px"><canvas id="c-p1" style="max-height:130px"></canvas></div>
+      </div>
+    </div>
+    <!-- Plotter 2 -->
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-print"></i> PRUEBA DE CAMPO 2 — Epson SC-F9400</div><span class="badge bg-green"><span class="sd sd-g"></span> Ejecutando</span></div>
+      <div class="cb">
+        <div class="flex-between mb16" style="align-items:flex-start;gap:12px">
+          <div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px">Operador</div><div class="fw7">José L. Zelaya</div><div class="tm" style="font-size:.7rem">Turno: 06:00 AM — 02:00 PM</div></div>
+          <div style="text-align:right"><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px">Trabajo Actual</div><div class="fw7">OP-2024-0842</div><div class="tm" style="font-size:.7rem">Camisetas Escuela Básica Tegucigalpa</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+          <div class="ms"><div class="msl">Velocidad</div><div class="msv" id="p2-vel">35.2</div><div style="font-size:.58rem;color:var(--muted)">m²/hr</div></div>
+          <div class="ms"><div class="msl">Temp.</div><div class="msv" id="p2-tmp">41°C</div></div>
+          <div class="ms"><div class="msl">Progreso</div><div class="msv" id="p2-pg">34%</div></div>
+          <div class="ms"><div class="msl">Resolución</div><div class="msv">720dpi</div></div>
+        </div>
+        <div style="font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:5px">Niveles de Tinta — Cian / Magenta / Amarillo / Negro / Naranja / Violeta</div>
+        <div class="ink-row" id="ink2"></div>
+        <div class="pb" style="height:8px;margin-top:10px"><div class="pf pf-b" id="pb2" style="width:34%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:.68rem;color:var(--muted)">Progreso del trabajo</span><span style="font-size:.68rem;font-weight:700;color:var(--info)" id="p2-eta">ETA: 01:24 min</span></div>
+        <div style="margin-top:12px"><canvas id="c-p2" style="max-height:130px"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CALANDRA ===================== -->
+<div id="pg-calandra" class="page">
+  <div class="page-title">
+    <div class="icon-badge"><i class="fas fa-temperature-high"></i></div>
+    <h2>Calandra Térmica de Sublimación</h2>
+    <span class="ptag">Prueba de Campo 3 — 1 Equipo</span>
+  </div>
+
+  <div class="g4">
+    <div class="kpi green"><div class="kl">Piezas Calandradas</div><div class="kv" id="cal-pz">624</div><div class="kt up"><i class="fas fa-arrow-up"></i>+8.2% vs ayer</div></div>
+    <div class="kpi red"><div class="kl">Temperatura Actual</div><div class="kv" id="cal-tk">198°C</div><div class="ksub">Rango: 180 – 210 °C</div></div>
+    <div class="kpi gold"><div class="kl">Presión (bar)</div><div class="kv" id="cal-prk">4.2</div><div class="ksub">Nominal: 4.0 – 5.0 bar</div></div>
+    <div class="kpi blue"><div class="kl">Vel. Cinta m/min</div><div class="kv" id="cal-vk">1.8</div><div class="ksub">Óptima: 1.5 – 2.0</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-temperature-high"></i> PRUEBA DE CAMPO 3 — Calandra Joto CP-38P</div><span class="badge bg-green"><span class="sd sd-g"></span> Ejecutando</span></div>
+      <div class="cb">
+        <div class="flex-between" style="margin-bottom:14px;align-items:flex-start;gap:12px">
+          <div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;font-weight:700">Operador</div><div class="fw7">Karla S. Reyes</div><div class="tm" style="font-size:.7rem">Turno: 06:00 AM — 02:00 PM</div></div>
+          <div style="text-align:right"><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;font-weight:700">Trabajo</div><div class="fw7">OP-2024-0841</div><div class="tm" style="font-size:.7rem">Uniformes Sublimados Completos</div></div>
+        </div>
+        <div class="temp-board">
+          <div class="temp-label"><i class="fas fa-temperature-high"></i> Temperatura del Cilindro Calefactor</div>
+          <div><span class="temp-num" id="cal-temp-num">198</span><span class="temp-unit"> °C</span></div>
+          <div class="temp-range">Rango Operativo: 180°C — 210°C &nbsp;|&nbsp; Calentamiento: ±2°C</div>
+          <div class="temp-slider"><div class="temp-ptr" id="cal-ptr" style="left:48%"></div></div>
+          <div class="temp-ticks"><span>160°C</span><span>180°C</span><span>200°C</span><span>220°C</span><span>240°C</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <div class="ms"><div class="msl">Presión</div><div class="msv" id="cal-prd">4.2 bar</div></div>
+          <div class="ms"><div class="msl">Vel. Cinta</div><div class="msv" id="cal-vld">1.8 m/min</div></div>
+          <div class="ms"><div class="msl">Ciclos Hoy</div><div class="msv" id="cal-cyc">312</div></div>
+          <div class="ms"><div class="msl">T° Sup.</div><div class="msv" id="cal-tsup">202°C</div></div>
+          <div class="ms"><div class="msl">T° Inf.</div><div class="msv" id="cal-tinf">196°C</div></div>
+          <div class="ms"><div class="msl">Uptime</div><div class="msv">6h 42m</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-chart-line"></i> Historial Temperatura — Última Hora</div></div>
+      <div class="cb"><canvas id="c-cald" style="max-height:300px"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CORTADORA LASER ===================== -->
+<div id="pg-laser" class="page">
+  <div class="page-title">
+    <div class="icon-badge"><i class="fas fa-bolt"></i></div>
+    <h2>Cortadora Textil Láser</h2>
+    <span class="ptag">Prueba de Campo 4 — 1 Equipo</span>
+  </div>
+
+  <div class="g4">
+    <div class="kpi green"><div class="kl">Piezas Cortadas Hoy</div><div class="kv" id="lz-pz">1,024</div><div class="kt up"><i class="fas fa-arrow-up"></i>+14.1%</div></div>
+    <div class="kpi gold"><div class="kl">Potencia Láser</div><div class="kv" id="lz-pt">87<small>%</small></div><div class="ksub">100W nominal</div></div>
+    <div class="kpi blue"><div class="kl">Velocidad Corte</div><div class="kv" id="lz-vl">8.4<small>m/min</small></div></div>
+    <div class="kpi teal"><div class="kl">Desperdicio Tela</div><div class="kv" id="lz-dp">3.2<small>%</small></div><div class="kt up"><i class="fas fa-arrow-down"></i>Bajo</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-bolt"></i> PRUEBA DE CAMPO 4 — Cortadora Flux Beamo Pro</div><span class="badge bg-green"><span class="sd sd-g"></span> Ejecutando</span></div>
+      <div class="cb">
+        <div class="flex-between" style="margin-bottom:14px;align-items:flex-start;gap:12px">
+          <div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;font-weight:700">Operador</div><div class="fw7">Edwin J. Mejía</div><div class="tm" style="font-size:.7rem">Turno: 06:00 AM — 02:00 PM</div></div>
+          <div style="text-align:right"><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;font-weight:700">Trabajo Actual</div><div class="fw7">OP-2024-0843</div><div class="tm" style="font-size:.7rem">Camisetas Polo Escolar Comayagüela</div></div>
+        </div>
+        <div style="background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:12px;border:1px solid var(--border)">
+          <div class="flex-between" style="margin-bottom:7px">
+            <div style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase">Progreso del Trabajo Actual</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--navy)" id="lz-pgv">58%</div>
+          </div>
+          <div class="pb" style="height:10px"><div class="pf pf-go" id="lz-pgb" style="width:58%"></div></div>
+          <div class="flex-between" style="margin-top:5px;font-size:.67rem;color:var(--muted)"><span>OP-2024-0843 · 480 piezas programadas</span><span id="lz-eta">ETA: 00:58 min</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <div class="ms"><div class="msl">Potencia</div><div class="msv" id="lz-ptd">87 W</div></div>
+          <div class="ms"><div class="msl">Velocidad</div><div class="msv" id="lz-vld">8.4 m/m</div></div>
+          <div class="ms"><div class="msl">Temp. Cabezal</div><div class="msv" id="lz-th">52°C</div></div>
+          <div class="ms"><div class="msl">Aire Comprm.</div><div class="msv">6.2 bar</div></div>
+          <div class="ms"><div class="msl">Capas/Corte</div><div class="msv">12</div></div>
+          <div class="ms"><div class="msl">Desperdicio</div><div class="msv" id="lz-dpd">3.2%</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-chart-line"></i> Velocidad y Potencia — Historial 30 min</div></div>
+      <div class="cb"><canvas id="c-laser" style="max-height:300px"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CONFECCION ===================== -->
+<div id="pg-confeccion" class="page">
+  <div class="page-title">
+    <div class="icon-badge"><i class="fas fa-scissors"></i></div>
+    <h2>Área de Confección</h2>
+    <span class="ptag">Pruebas de Campo 5–14 — 10 Máquinas</span>
+  </div>
+
+  <div class="g4">
+    <div class="kpi green"><div class="kl">Piezas Confeccionadas</div><div class="kv" id="cf-pz">1,241</div><div class="kt up"><i class="fas fa-arrow-up"></i>+9.3%</div></div>
+    <div class="kpi gold"><div class="kl">Eficiencia Área</div><div class="kv" id="cf-ef">91.4%</div></div>
+    <div class="kpi blue"><div class="kl">Máquinas Activas</div><div class="kv">9<small>/10</small></div><div class="kt neu"><i class="fas fa-wrench"></i> 1 en mantenimiento</div></div>
+    <div class="kpi"><div class="kl">Ciclo Promedio</div><div class="kv" id="cf-cy">4.2<small>min</small></div></div>
+  </div>
+
+  <div id="conf-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px"></div>
+
+  <div class="card">
+    <div class="ch"><div class="chl"><i class="fas fa-chart-bar"></i> Producción por Máquina — Piezas/hr</div></div>
+    <div class="cb"><canvas id="c-conf" style="max-height:180px"></canvas></div>
+  </div>
+</div>
+
+<!-- ===================== ETIQUETADO ===================== -->
+<div id="pg-etiquetado" class="page">
+  <div class="page-title">
+    <div class="icon-badge"><i class="fas fa-tags"></i></div>
+    <h2>Etiquetado y Empaquetado</h2>
+    <span class="ptag">Pruebas de Campo 15–19 — 5 Máquinas</span>
+  </div>
+
+  <div class="g4">
+    <div class="kpi green"><div class="kl">Piezas Etiquetadas</div><div class="kv" id="et-pz">1,198</div><div class="kt up"><i class="fas fa-arrow-up"></i>+6.7%</div></div>
+    <div class="kpi gold"><div class="kl">Unidades Empacadas</div><div class="kv" id="et-pk">847</div></div>
+    <div class="kpi blue"><div class="kl">Tasa de Error</div><div class="kv" id="et-er">0.8<small>%</small></div><div class="kt up"><i class="fas fa-arrow-down"></i>Bajo</div></div>
+    <div class="kpi"><div class="kl">Velocidad Prom.</div><div class="kv" id="et-vl">142<small>u/hr</small></div></div>
+  </div>
+
+  <div id="etiq-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px"></div>
+
+  <div class="card">
+    <div class="ch"><div class="chl"><i class="fas fa-chart-line"></i> Throughput Etiquetado — Unidades/hr</div></div>
+    <div class="cb"><canvas id="c-etiq" style="max-height:180px"></canvas></div>
+  </div>
+</div>
+
+<!-- ===================== PRUEBAS ===================== -->
+<div id="pg-pruebas" class="page">
+  <div class="page-title">
+    <div class="icon-badge"><i class="fas fa-clipboard-list"></i></div>
+    <h2>Registro de Pruebas de Campo</h2>
+    <span class="ptag">19 Pruebas — Proyecto L. 600,000.00</span>
+  </div>
+
+  <div class="g4" style="margin-bottom:18px">
+    <div class="kpi green"><div class="kl">Pruebas Completadas</div><div class="kv">16</div><div class="kt up"><i class="fas fa-check-circle"></i> 84.2% del total</div></div>
+    <div class="kpi gold"><div class="kl">En Ejecución</div><div class="kv">17</div><div class="kt up"><i class="fas fa-spinner"></i> Sin incidentes</div></div>
+    <div class="kpi red"><div class="kl">Con Alertas</div><div class="kv">2</div><div class="kt neu"><i class="fas fa-triangle-exclamation"></i> Revisión requerida</div></div>
+    <div class="kpi blue"><div class="kl">Detenidas</div><div class="kv">1</div><div class="kt down"><i class="fas fa-wrench"></i> Mantenimiento</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="chl"><i class="fas fa-table-list"></i> Registro Completo — Todas las Áreas de Producción</div><span class="badge bg-gold">19 Pruebas Registradas</span></div>
+    <div class="cb p0">
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>#</th><th>Prueba de Campo</th><th>Equipo / Modelo</th><th>Área</th><th>Operador</th><th>Estado</th><th>Inicio</th><th>Duración</th><th>Piezas</th><th>Eficiencia</th><th>Observaciones</th></tr></thead>
+          <tbody id="pruebas-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CALIDAD ===================== -->
+<div id="pg-calidad" class="page">
+  <div class="page-title">
+    <div class="icon-badge"><i class="fas fa-medal"></i></div>
+    <h2>Control de Calidad Integral</h2>
+    <span class="ptag">QC Todas las Áreas · Tiempo Real</span>
+  </div>
+
+  <div class="g4">
+    <div class="kpi green"><div class="kl">Aprobadas QC</div><div class="kv" id="qc-ok">1,791</div><div class="kt up"><i class="fas fa-circle-check"></i> 97.0%</div></div>
+    <div class="kpi red"><div class="kl">Rechazadas</div><div class="kv" id="qc-rej">56</div><div class="kt neu">3.0% defectos</div></div>
+    <div class="kpi gold"><div class="kl">En Revisión</div><div class="kv" id="qc-rev">24</div></div>
+    <div class="kpi blue"><div class="kl">Índice de Calidad</div><div class="kv" id="qc-idx">97.0<small>%</small></div><div class="kt up"><i class="fas fa-arrow-up"></i>+0.5%</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-chart-pie"></i> Tipos de Defectos Detectados</div></div>
+      <div class="cb"><canvas id="c-def" style="max-height:250px"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="chl"><i class="fas fa-chart-line"></i> Tendencia de Calidad — 7 Días</div></div>
+      <div class="cb"><canvas id="c-qct" style="max-height:250px"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="chl"><i class="fas fa-list-check"></i> Registro de Rechazos Recientes</div><span class="badge bg-red">7 Registros</span></div>
+    <div class="cb p0">
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>#</th><th>Hora</th><th>Área</th><th>Prueba</th><th>Operador</th><th>Tipo de Defecto</th><th>Acción Tomada</th></tr></thead>
+          <tbody id="qc-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+'use strict';
+// ================================================================
+// DATA DEFINITIONS
+// ================================================================
+const OPS = [
+  'Carlos A. Maldonado','Ana M. Perdomo','José L. Zelaya','Karla S. Reyes',
+  'Edwin J. Mejía','Rosa E. Bustillo','Marvin E. Alvarado','Yessica P. Herrera',
+  'Roberto D. Ochoa','Silvia B. Fúnez','Jorge M. Sánchez','Diana L. Escoto',
+  'Kevin A. Matamoros','Luisa F. Aguilar','Pedro A. Cabrera',
+  'Mirna G. Torres','Óscar R. López','Gladys N. Pineda','Héctor M. Cruz'
+];
+
+const CONF_MACH = [
+  {id:'PC-05',pc:5,name:'Overlock 1',model:'Juki MO-6714DA',op:OPS[5],status:'running',pph:44,efic:93},
+  {id:'PC-06',pc:6,name:'Overlock 2',model:'Juki MO-6714DA',op:OPS[6],status:'running',pph:41,efic:89},
+  {id:'PC-07',pc:7,name:'Recubridora 1',model:'Juki MF-7923',op:OPS[7],status:'running',pph:38,efic:91},
+  {id:'PC-08',pc:8,name:'Recta 1',model:'Brother S-7200C',op:OPS[8],status:'warning',pph:35,efic:78},
+  {id:'PC-09',pc:9,name:'Recta 2',model:'Brother S-7200C',op:OPS[9],status:'running',pph:42,efic:94},
+  {id:'PC-10',pc:10,name:'Elasticadora',model:'Yamato VC2700',op:OPS[10],status:'running',pph:48,efic:97},
+  {id:'PC-11',pc:11,name:'Overlock 3',model:'Juki MO-6716S',op:OPS[11],status:'running',pph:40,efic:90},
+  {id:'PC-12',pc:12,name:'Plana 1',model:'Juki DDL-9000CF',op:OPS[12],status:'stopped',pph:0,efic:0},
+  {id:'PC-13',pc:13,name:'Collarín 1',model:'Rimoldi 229-12-3CE',op:OPS[13],status:'running',pph:36,efic:88},
+  {id:'PC-14',pc:14,name:'Recta 3',model:'Brother S-7200C',op:OPS[14],status:'running',pph:43,efic:92},
+];
+
+const ETIQ_MACH = [
+  {id:'PC-15',pc:15,name:'Etiquetadora 1',model:'Avery Dennison 64',op:OPS[15],status:'running',uph:148,efic:96,err:0.4},
+  {id:'PC-16',pc:16,name:'Etiquetadora 2',model:'Avery Dennison 64',op:OPS[16],status:'running',uph:141,efic:93,err:0.7},
+  {id:'PC-17',pc:17,name:'Etiquetadora 3',model:'Paxar Monarch 9855',op:OPS[17],status:'running',uph:138,efic:91,err:1.2},
+  {id:'PC-18',pc:18,name:'Empaquetadora 1',model:'PAC Machinery RP-8',op:OPS[18],status:'running',uph:155,efic:98,err:0.3},
+  {id:'PC-19',pc:19,name:'Empaquetadora 2',model:'PAC Machinery RP-8',op:OPS[0],status:'warning',uph:112,efic:74,err:2.8},
+];
+
+const PRUEBAS = [
+  {n:1,id:'PC-01',equipo:'Epson SC-F9400H',area:'Impresión Digital',op:OPS[1],status:'running',inicio:'06:00',dur:'7h 04m',piezas:412,efic:96.4,obs:'Operación nominal. Tinta Cian al 28%, reponer pronto.'},
+  {n:2,id:'PC-02',equipo:'Epson SC-F9400',area:'Impresión Digital',op:OPS[2],status:'warning',inicio:'06:00',dur:'7h 04m',piezas:385,efic:89.7,obs:'⚠ Banding leve en zona derecha. Monitorear resolución.'},
+  {n:3,id:'PC-03',equipo:'Calandra Joto CP-38P',area:'Calandrado',op:OPS[3],status:'running',inicio:'06:00',dur:'7h 04m',piezas:624,efic:94.1,obs:'Temperatura estable. Promedio 198°C. Sin incidentes.'},
+  {n:4,id:'PC-04',equipo:'Cortadora Flux Beamo Pro',area:'Corte Láser',op:OPS[4],status:'running',inicio:'06:00',dur:'7h 04m',piezas:1024,efic:97.3,obs:'Excelente precisión. 3.2% desperdicio de tela.'},
+  {n:5,id:'PC-05',equipo:'Juki MO-6714DA',area:'Confección',op:OPS[5],status:'running',inicio:'06:00',dur:'7h 04m',piezas:308,efic:93.2,obs:'Tensión de hilo ajustada a las 09:15. Normal.'},
+  {n:6,id:'PC-06',equipo:'Juki MO-6714DA',area:'Confección',op:OPS[6],status:'running',inicio:'06:00',dur:'7h 04m',piezas:287,efic:89.4,obs:'Normal. Sin incidentes.'},
+  {n:7,id:'PC-07',equipo:'Juki MF-7923',area:'Confección',op:OPS[7],status:'running',inicio:'06:00',dur:'7h 04m',piezas:266,efic:90.8,obs:'Normal. Recubrimiento uniforme.'},
+  {n:8,id:'PC-08',equipo:'Brother S-7200C (Recta 1)',area:'Confección',op:OPS[8],status:'warning',inicio:'06:00',dur:'7h 04m',piezas:231,efic:78.3,obs:'⚠ Aguja rota a las 11:40. Pieza en revisión. Reemplazando.'},
+  {n:9,id:'PC-09',equipo:'Brother S-7200C (Recta 2)',area:'Confección',op:OPS[9],status:'running',inicio:'06:00',dur:'7h 04m',piezas:294,efic:94.2,obs:'Normal. Rendimiento óptimo.'},
+  {n:10,id:'PC-10',equipo:'Yamato VC2700 Elasticadora',area:'Confección',op:OPS[10],status:'running',inicio:'06:00',dur:'7h 04m',piezas:336,efic:97.1,obs:'Excelente rendimiento. Sin incidentes.'},
+  {n:11,id:'PC-11',equipo:'Juki MO-6716S (Overlock 3)',area:'Confección',op:OPS[11],status:'running',inicio:'06:00',dur:'7h 04m',piezas:280,efic:90.1,obs:'Normal.'},
+  {n:12,id:'PC-12',equipo:'Juki DDL-9000CF (Plana 1)',area:'Confección',op:OPS[12],status:'stopped',inicio:'08:30',dur:'0h 00m',piezas:0,efic:0,obs:'🔴 Mantenimiento correctivo. Rodillo de transporte. ETA: 13:30.'},
+  {n:13,id:'PC-13',equipo:'Rimoldi 229-12-3CE Collarín',area:'Confección',op:OPS[13],status:'running',inicio:'06:00',dur:'7h 04m',piezas:252,efic:88.3,obs:'Normal. Collarín uniforme.'},
+  {n:14,id:'PC-14',equipo:'Brother S-7200C (Recta 3)',area:'Confección',op:OPS[14],status:'running',inicio:'06:00',dur:'7h 04m',piezas:301,efic:92.4,obs:'Normal.'},
+  {n:15,id:'PC-15',equipo:'Avery Dennison 64 (Etiq. 1)',area:'Etiquetado',op:OPS[15],status:'running',inicio:'06:00',dur:'7h 04m',piezas:240,efic:96.2,obs:'Normal. Etiquetado preciso.'},
+  {n:16,id:'PC-16',equipo:'Avery Dennison 64 (Etiq. 2)',area:'Etiquetado',op:OPS[16],status:'running',inicio:'06:00',dur:'7h 04m',piezas:228,efic:92.8,obs:'Normal.'},
+  {n:17,id:'PC-17',equipo:'Paxar Monarch 9855 (Etiq. 3)',area:'Etiquetado',op:OPS[17],status:'running',inicio:'06:00',dur:'7h 04m',piezas:223,efic:90.6,obs:'Tasa de error ligeramente elevada. Calibrar sensor.'},
+  {n:18,id:'PC-18',equipo:'PAC Machinery RP-8 (Emp. 1)',area:'Empaque',op:OPS[18],status:'running',inicio:'06:00',dur:'7h 04m',piezas:251,efic:98.1,obs:'Excelente. Sin incidentes. Film al 72%.'},
+  {n:19,id:'PC-19',equipo:'PAC Machinery RP-8 (Emp. 2)',area:'Empaque',op:OPS[0],status:'warning',inicio:'06:00',dur:'7h 04m',piezas:181,efic:74.2,obs:'⚠ Film de empaque nivel crítico (<40m). Reponer urgente.'},
+];
+
+const QC_REJ = [
+  {n:1,hora:'06:47',area:'Impresión',prueba:'PC-02',op:OPS[2],tipo:'Banding de color',accion:'Reimpresión programada'},
+  {n:2,hora:'07:12',area:'Calandrado',prueba:'PC-03',op:OPS[3],tipo:'Presión insuficiente',accion:'Recalibración realizada'},
+  {n:3,hora:'08:05',area:'Confección',prueba:'PC-08',op:OPS[8],tipo:'Costura irregular',accion:'Pieza separada para revisión'},
+  {n:4,hora:'09:18',area:'Impresión',prueba:'PC-02',op:OPS[2],tipo:'Desalineación diseño',accion:'Reimpresión completada'},
+  {n:5,hora:'10:33',area:'Empaque',prueba:'PC-19',op:OPS[0],tipo:'Empaque defectuoso',accion:'Reembolsado — revisión manual'},
+  {n:6,hora:'11:40',area:'Confección',prueba:'PC-08',op:OPS[8],tipo:'Aguja rota / costura saltada',accion:'Parada — Mantenimiento activo'},
+  {n:7,hora:'12:05',area:'Corte Láser',prueba:'PC-04',op:OPS[4],tipo:'Borde quemado leve',accion:'Ajuste de potencia realizado'},
+];
+
+const ALERTS_ACT = [
+  {type:'warn',icon:'fas fa-droplet',text:'Plotter Epson SC-F9400H (PC-01): Nivel de tinta Cian al 28%. Reponer antes del próximo trabajo.',time:'Hace 12 min',area:'Impresión Digital'},
+  {type:'err',icon:'fas fa-box-open',text:'Empaquetadora 2 (PC-19): Film de empaque en nivel crítico (menos de 40m restantes). Reponer urgente.',time:'Hace 28 min',area:'Empaque'},
+  {type:'err',icon:'fas fa-wrench',text:'Máq. Plana 1 (PC-12): Detenida por mantenimiento correctivo. Rodillo de transporte. ETA reanudación: 13:30 hrs.',time:'Hace 3h 32m',area:'Confección'},
+];
+
+const ALERTS_HIST = [
+  {type:'ok',icon:'fas fa-circle-check',text:'Calandra Joto CP-38P: Temperatura re-estabilizada después de ajuste a las 09:45. T° nominal 198°C.',time:'09:47'},
+  {type:'ok',icon:'fas fa-circle-check',text:'Plotter SC-F9400 (PC-02): Banding de color corregido. Reimpresión de lote completada exitosamente.',time:'08:30'},
+  {type:'ok',icon:'fas fa-circle-check',text:'Máq. Overlock 1 (PC-05): Tensión de hilo re-ajustada por técnico. Operación normal reanudada.',time:'09:15'},
+  {type:'info',icon:'fas fa-info-circle',text:'Sistema: Turno de tarde notificado. 14 operadores confirmados para 14:00 hrs.',time:'07:00'},
+  {type:'ok',icon:'fas fa-circle-check',text:'Cortadora Láser (PC-04): Calibración de inicio de turno completada. Potencia y velocidad verificadas.',time:'06:15'},
+];
+
+// ================================================================
+// CHART STATE
+// ================================================================
+const LEN = 22;
+const rnd = (min,max) => Math.random()*(max-min)+min;
+const rndInt = (min,max) => Math.floor(rnd(min,max));
+
+let dProd   = Array.from({length:LEN},()=>rndInt(175,245));
+let dTcal   = Array.from({length:LEN},()=>rndInt(190,212));
+let dTp1    = Array.from({length:LEN},()=>rndInt(36,44));
+let dTp2    = Array.from({length:LEN},()=>rndInt(37,46));
+let dP1sp   = Array.from({length:LEN},()=>rnd(37,45));
+let dP2sp   = Array.from({length:LEN},()=>rnd(30,40));
+let dLzVel  = Array.from({length:LEN},()=>rnd(7.5,9.5));
+let dLzPot  = Array.from({length:LEN},()=>rnd(80,96));
+let dEtiq   = Array.from({length:LEN},()=>rndInt(125,165));
+
+let p1Pg=67, p2Pg=34, lzPg=58, calTemp=198, calPres=4.2, calVel=1.8;
+
+const charts = {};
+
+// ================================================================
+// INIT
+// ================================================================
+document.addEventListener('DOMContentLoaded', () => {
+  renderAll();
+  initCharts();
+  startClock();
+  setInterval(tickRT, 2400);
+  setInterval(tickCharts, 2400);
+});
+
+function startClock(){
+  const tick = () => {
+    const n = new Date();
+    document.getElementById('clock-val').textContent = n.toLocaleTimeString('es-HN',{hour12:false});
+    const ds = document.getElementById('date-strip');
+    if(ds) ds.textContent = n.toLocaleDateString('es-HN',{weekday:'long',year:'numeric',month:'long',day:'numeric'}) + ' · Supervisor: Carlos A. Maldonado';
+  };
+  tick(); setInterval(tick, 1000);
+}
+
+// ================================================================
+// RENDER
+// ================================================================
+function renderAll(){
+  renderQuick(); renderConf(); renderEtiq(); renderPruebas(); renderAlerts(); renderQC(); renderInk();
+}
+
+function sbadge(s){
+  if(s==='running') return `<span class="badge bg-green"><span class="sd sd-g"></span> Ejecutando</span>`;
+  if(s==='warning') return `<span class="badge bg-gold"><span class="sd sd-y"></span> Advertencia</span>`;
+  if(s==='stopped') return `<span class="badge bg-red"><span class="sd sd-r"></span> Detenida</span>`;
+  return s;
+}
+
+function sdot(s){
+  if(s==='running') return `<div class="sd sd-g"></div>`;
+  if(s==='warning') return `<div class="sd sd-y"></div>`;
+  return `<div class="sd sd-r"></div>`;
+}
+
+function renderQuick(){
+  const tb = document.getElementById('quick-tbody');
+  if(!tb) return;
+  const rows = [
+    PRUEBAS[0],PRUEBAS[1],PRUEBAS[2],PRUEBAS[3],
+    ...PRUEBAS.slice(4,7),PRUEBAS[9],PRUEBAS[17],PRUEBAS[18]
+  ];
+  tb.innerHTML = rows.map(p=>`<tr>
+    <td class="fw7 tg" style="font-size:.78rem">${p.id}</td>
+    <td style="font-size:.78rem"><span class="fw7">PC ${p.n}</span> — ${p.equipo.split(' ').slice(0,2).join(' ')}</td>
+    <td><span class="badge bg-blue" style="font-size:.58rem">${p.area}</span></td>
+    <td style="font-size:.75rem">${p.op}</td>
+    <td>${sbadge(p.status)}</td>
+    <td style="font-weight:700;color:${p.efic>=90?'var(--success)':p.efic>=75?'var(--warn)':'var(--danger)'}">${p.efic||'—'}%</td>
+    <td class="fw7">${p.piezas||'—'}</td>
+  </tr>`).join('');
+}
+
+function renderConf(){
+  const g = document.getElementById('conf-grid');
+  if(!g) return;
+  g.innerHTML = CONF_MACH.map(m=>`<div class="mc ${m.status}">
+    <div class="mc-head"><div><div class="mc-id">${m.id} · Prueba ${m.pc}</div><div class="mc-name">${m.name}</div></div>${sdot(m.status)}</div>
+    <div class="mc-op"><i class="fas fa-user" style="font-size:.6rem;margin-right:3px"></i>${m.op}</div>
+    <div class="mc-model">${m.model}</div>
+    <div class="mc-stats">
+      <div class="ms"><div class="msl">Pzas/hr</div><div class="msv">${m.pph||'—'}</div></div>
+      <div class="ms"><div class="msl">Efic.</div><div class="msv" style="color:${m.efic>=90?'var(--success)':m.efic>=75?'var(--warn)':'var(--danger)'}">${m.efic||0}%</div></div>
+    </div>
+    ${m.status!=='stopped'?`<div class="pb" style="margin-top:8px"><div class="pf" style="width:${m.efic}%;background:${m.efic>=90?'var(--success)':m.efic>=75?'var(--warn)':'var(--danger)'}"></div></div>`:'<div style="font-size:.65rem;color:var(--danger);font-weight:700;margin-top:6px">EN MANTENIMIENTO</div>'}
+  </div>`).join('');
+}
+
+function renderEtiq(){
+  const g = document.getElementById('etiq-grid');
+  if(!g) return;
+  g.innerHTML = ETIQ_MACH.map(m=>`<div class="mc ${m.status}">
+    <div class="mc-head"><div><div class="mc-id">${m.id} · Prueba ${m.pc}</div><div class="mc-name">${m.name}</div></div>${sdot(m.status)}</div>
+    <div class="mc-op"><i class="fas fa-user" style="font-size:.6rem;margin-right:3px"></i>${m.op}</div>
+    <div class="mc-model">${m.model}</div>
+    <div class="mc-stats">
+      <div class="ms"><div class="msl">u/hr</div><div class="msv">${m.uph||'—'}</div></div>
+      <div class="ms"><div class="msl">Error</div><div class="msv" style="color:${m.err<=1?'var(--success)':m.err<=2?'var(--warn)':'var(--danger)'}">${m.err}%</div></div>
+    </div>
+    <div class="pb" style="margin-top:8px"><div class="pf" style="width:${m.efic}%;background:${m.efic>=90?'var(--success)':m.efic>=75?'var(--warn)':'var(--danger)'}"></div></div>
+  </div>`).join('');
+}
+
+function renderPruebas(){
+  const tb = document.getElementById('pruebas-tbody');
+  if(!tb) return;
+  tb.innerHTML = PRUEBAS.map(p=>`<tr>
+    <td class="fw7" style="color:var(--muted)">${p.n}</td>
+    <td class="fw7 tg">${p.id} — Prueba de Campo ${p.n}</td>
+    <td style="font-size:.78rem">${p.equipo}</td>
+    <td><span class="badge bg-blue" style="font-size:.6rem">${p.area}</span></td>
+    <td style="font-size:.78rem">${p.op}</td>
+    <td>${sbadge(p.status)}</td>
+    <td>${p.inicio}</td>
+    <td>${p.dur}</td>
+    <td class="fw7">${p.piezas||'—'}</td>
+    <td>${p.efic>0?`<span style="font-weight:700;color:${p.efic>=90?'var(--success)':p.efic>=75?'var(--warn)':'var(--danger)'}">${p.efic}%</span>`:'—'}</td>
+    <td style="font-size:.72rem;max-width:210px">${p.obs}</td>
+  </tr>`).join('');
+}
+
+function renderAlerts(){
+  const a = document.getElementById('alerts-active');
+  const h = document.getElementById('alerts-hist');
+  if(a) a.innerHTML = ALERTS_ACT.map(al=>`<div class="ali"><div class="ali-icon ai-${al.type}"><i class="${al.icon}"></i></div><div><div class="ali-text fw7">${al.text}</div><div class="ali-meta">${al.time} &nbsp;·&nbsp; ${al.area}</div></div></div>`).join('');
+  if(h) h.innerHTML = ALERTS_HIST.map(al=>`<div class="ali"><div class="ali-icon ai-${al.type}"><i class="${al.icon}"></i></div><div><div class="ali-text">${al.text}</div><div class="ali-meta">${al.time}</div></div></div>`).join('');
+}
+
+function renderQC(){
+  const tb = document.getElementById('qc-tbody');
+  if(!tb) return;
+  tb.innerHTML = QC_REJ.map(r=>`<tr>
+    <td class="fw7">${r.n}</td><td>${r.hora}</td>
+    <td><span class="badge bg-blue" style="font-size:.6rem">${r.area}</span></td>
+    <td class="fw7">${r.prueba}</td><td style="font-size:.78rem">${r.op}</td>
+    <td><span class="badge bg-red" style="font-size:.6rem">${r.tipo}</span></td>
+    <td style="font-size:.75rem">${r.accion}</td>
+  </tr>`).join('');
+}
+
+const INK_DATA = [
+  [{c:'#00bcd4',l:'C',pct:28},{c:'#e91e63',l:'M',pct:61},{c:'#fdd835',l:'Y',pct:74},{c:'#212121',l:'K',pct:55},{c:'#ff6f00',l:'Or',pct:80},{c:'#7b1fa2',l:'Vi',pct:42}],
+  [{c:'#00bcd4',l:'C',pct:68},{c:'#e91e63',l:'M',pct:45},{c:'#fdd835',l:'Y',pct:83},{c:'#212121',l:'K',pct:71},{c:'#ff6f00',l:'Or',pct:59},{c:'#7b1fa2',l:'Vi',pct:37}]
+];
+
+function renderInk(){
+  ['ink1','ink2'].forEach((id,i)=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = INK_DATA[i].map(ink=>`<div class="ink-col">
+      <div class="ink-wrap"><div class="ink-fill" style="height:${ink.pct}%;background:${ink.c}"></div></div>
+      <div class="ink-lbl">${ink.l}<br>${ink.pct}%</div>
+    </div>`).join('');
+  });
+}
+
+// ================================================================
+// CHARTS
+// ================================================================
+const cOpts = (extra={}) => ({
+  responsive:true,maintainAspectRatio:true,
+  animation:{duration:400},
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(0,20,40,.92)',titleColor:'#d4a017',bodyColor:'#fff',padding:10,cornerRadius:7,titleFont:{family:'Barlow Condensed',size:13,weight:'bold'}}},
+  scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}},
+  ...extra
+});
+
+const LABELS = Array.from({length:LEN},(_,i)=>i%4===0?`${i*3}m`:'');
+
+function initCharts(){
+  // Production line
+  charts.prod = new Chart(document.getElementById('c-prod'),{type:'line',
+    data:{labels:LABELS,datasets:[{label:'Piezas/hr',data:[...dProd],borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.07)',borderWidth:2.5,tension:.42,fill:true,pointRadius:2.5,pointBackgroundColor:'#22c55e'}]},
+    options:cOpts()
+  });
+
+  // Eficiencia bar
+  charts.efic = new Chart(document.getElementById('c-efic'),{type:'bar',
+    data:{labels:['Impresión','Calandrado','Corte Láser','Confección','Etiquetado','Empaque'],
+      datasets:[{label:'Eficiencia %',data:[93.1,94.1,97.3,91.4,93.2,86.2],
+        backgroundColor:['rgba(59,130,246,.8)','rgba(245,158,11,.8)','rgba(34,197,94,.8)','rgba(139,92,246,.8)','rgba(20,184,166,.8)','rgba(239,68,68,.8)'],
+        borderRadius:7,borderWidth:0}]},
+    options:cOpts({scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},y:{min:70,max:100,ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}}})
+  });
+
+  // Calidad doughnut
+  charts.cal = new Chart(document.getElementById('c-cal'),{type:'doughnut',
+    data:{labels:['Aprobadas (97%)','Rechazadas (3%)','En Revisión (1.3%)'],
+      datasets:[{data:[97.0,3.0,1.3],backgroundColor:['#22c55e','#e53e3e','#f59e0b'],borderWidth:0,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:true,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#64748b',font:{size:9},padding:8,boxWidth:12}},tooltip:{backgroundColor:'rgba(0,20,40,.9)',titleColor:'#d4a017',bodyColor:'#fff'}}}
+  });
+
+  // Temperatura line multi
+  charts.temp = new Chart(document.getElementById('c-temp'),{type:'line',
+    data:{labels:LABELS,datasets:[
+      {label:'Calandra (°C)',data:[...dTcal],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.05)',borderWidth:2.5,tension:.42,fill:true,pointRadius:2},
+      {label:'Plotter 1 (°C)',data:[...dTp1],borderColor:'#3b82f6',borderWidth:2,tension:.42,fill:false,pointRadius:2},
+      {label:'Plotter 2 (°C)',data:[...dTp2],borderColor:'#f59e0b',borderWidth:2,tension:.42,fill:false,pointRadius:2},
+    ]},
+    options:{...cOpts(),plugins:{legend:{display:true,position:'top',labels:{color:'#64748b',font:{size:9},padding:10,boxWidth:20}},tooltip:{backgroundColor:'rgba(0,20,40,.9)',titleColor:'#d4a017',bodyColor:'#fff'}}}
+  });
+
+  // Plotter 1 speed
+  charts.p1 = new Chart(document.getElementById('c-p1'),{type:'line',
+    data:{labels:LABELS,datasets:[{label:'m²/hr',data:[...dP1sp],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.07)',borderWidth:2,tension:.42,fill:true,pointRadius:0}]},
+    options:cOpts({scales:{x:{display:false},y:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}}})
+  });
+
+  // Plotter 2 speed
+  charts.p2 = new Chart(document.getElementById('c-p2'),{type:'line',
+    data:{labels:LABELS,datasets:[{label:'m²/hr',data:[...dP2sp],borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.07)',borderWidth:2,tension:.42,fill:true,pointRadius:0}]},
+    options:cOpts({scales:{x:{display:false},y:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}}})
+  });
+
+  // Calandra history
+  charts.cald = new Chart(document.getElementById('c-cald'),{type:'line',
+    data:{labels:LABELS,datasets:[{label:'°C',data:[...dTcal],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.06)',borderWidth:2.5,tension:.42,fill:true,pointRadius:3,pointBackgroundColor:'#ef4444'}]},
+    options:cOpts({scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},y:{min:170,max:225,ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}}})
+  });
+
+  // Laser dual axis
+  charts.laser = new Chart(document.getElementById('c-laser'),{type:'line',
+    data:{labels:LABELS,datasets:[
+      {label:'Velocidad m/min',data:[...dLzVel],borderColor:'#22c55e',borderWidth:2,tension:.42,fill:false,pointRadius:2,yAxisID:'y'},
+      {label:'Potencia W',data:[...dLzPot],borderColor:'#f59e0b',borderWidth:2,tension:.42,fill:false,pointRadius:2,yAxisID:'y1'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,animation:{duration:400},
+      plugins:{legend:{display:true,position:'top',labels:{color:'#64748b',font:{size:9},padding:10,boxWidth:20}},tooltip:{backgroundColor:'rgba(0,20,40,.9)',titleColor:'#d4a017',bodyColor:'#fff'}},
+      scales:{
+        x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},
+        y:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'},position:'left',title:{display:true,text:'m/min',color:'#94a3b8',font:{size:9}}},
+        y1:{ticks:{color:'#94a3b8',font:{size:9}},grid:{display:false},position:'right',title:{display:true,text:'W',color:'#94a3b8',font:{size:9}}}
+      }}
+  });
+
+  // Confección bar
+  charts.conf = new Chart(document.getElementById('c-conf'),{type:'bar',
+    data:{labels:CONF_MACH.map(m=>m.id),datasets:[{label:'Pzas/hr',
+      data:CONF_MACH.map(m=>m.pph),
+      backgroundColor:CONF_MACH.map(m=>m.status==='running'?'rgba(34,197,94,.8)':m.status==='warning'?'rgba(245,158,11,.8)':'rgba(229,62,62,.4)'),
+      borderRadius:5,borderWidth:0}]},
+    options:cOpts()
+  });
+
+  // Etiquetado line
+  charts.etiq = new Chart(document.getElementById('c-etiq'),{type:'line',
+    data:{labels:LABELS,datasets:[{label:'u/hr',data:[...dEtiq],borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,.07)',borderWidth:2.5,tension:.42,fill:true,pointRadius:2}]},
+    options:cOpts()
+  });
+
+  // Defectos doughnut
+  charts.def = new Chart(document.getElementById('c-def'),{type:'doughnut',
+    data:{labels:['Banding color','Costura irregular','Empaque defect.','Desalineación','Borde quemado','Otros'],
+      datasets:[{data:[28,21,14,18,8,11],backgroundColor:['#e53e3e','#f59e0b','#3b82f6','#8b5cf6','#22c55e','#94a3b8'],borderWidth:0,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:true,position:'right',labels:{color:'#64748b',font:{size:9},padding:8,boxWidth:12}},tooltip:{backgroundColor:'rgba(0,20,40,.9)',titleColor:'#d4a017',bodyColor:'#fff'}}}
+  });
+
+  // QC trend 7 days
+  charts.qct = new Chart(document.getElementById('c-qct'),{type:'line',
+    data:{labels:['Lunes','Martes','Miérc.','Jueves','Viernes','Sábado','Hoy'],
+      datasets:[{label:'Índice de Calidad %',data:[95.2,96.0,94.8,96.5,97.1,96.8,97.0],
+        borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.07)',borderWidth:2.5,tension:.42,fill:true,pointRadius:5,pointBackgroundColor:'#22c55e',pointBorderColor:'#fff',pointBorderWidth:2}]},
+    options:cOpts({scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},y:{min:90,max:100,ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}}}})
+  });
+}
+
+function push(arr, val){ arr.shift(); arr.push(val); }
+
+function tickCharts(){
+  if(!charts.prod) return;
+
+  push(dProd, rndInt(175,248));
+  charts.prod.data.datasets[0].data = [...dProd];
+  charts.prod.update('none');
+
+  calTemp = rndInt(192,210);
+  push(dTcal, calTemp);
+  push(dTp1, rndInt(36,45));
+  push(dTp2, rndInt(37,47));
+  charts.temp.data.datasets[0].data=[...dTcal];
+  charts.temp.data.datasets[1].data=[...dTp1];
+  charts.temp.data.datasets[2].data=[...dTp2];
+  charts.temp.update('none');
+
+  charts.cald.data.datasets[0].data=[...dTcal];
+  charts.cald.update('none');
+
+  push(dP1sp, rnd(37,46)); push(dP2sp, rnd(30,40));
+  charts.p1.data.datasets[0].data=[...dP1sp];
+  charts.p1.update('none');
+  charts.p2.data.datasets[0].data=[...dP2sp];
+  charts.p2.update('none');
+
+  push(dLzVel, rnd(7.4,9.6)); push(dLzPot, rnd(79,97));
+  charts.laser.data.datasets[0].data=[...dLzVel];
+  charts.laser.data.datasets[1].data=[...dLzPot];
+  charts.laser.update('none');
+
+  charts.efic.data.datasets[0].data=[
+    +(90+rnd(0,7)).toFixed(1),+(91+rnd(0,6)).toFixed(1),+(95+rnd(0,4)).toFixed(1),
+    +(89+rnd(0,6)).toFixed(1),+(91+rnd(0,5)).toFixed(1),+(82+rnd(0,8)).toFixed(1)
+  ];
+  charts.efic.update('none');
+
+  push(dEtiq, rndInt(125,168));
+  charts.etiq.data.datasets[0].data=[...dEtiq];
+  charts.etiq.update('none');
+
+  charts.conf.data.datasets[0].data=CONF_MACH.map(m=>m.status==='stopped'?0:Math.max(0,m.pph+rndInt(-5,5)));
+  charts.conf.update('none');
+}
+
+function si(id, html){ const e=document.getElementById(id); if(e) e.innerHTML=html; }
+function st(id, txt){ const e=document.getElementById(id); if(e) e.textContent=txt; }
+
+function tickRT(){
+  // KPIs
+  si('kpi-piezas',(1847+rndInt(0,25)).toLocaleString('es-HN'));
+  si('kpi-efic',(93+rnd(0,3)).toFixed(1)+'<small style="font-size:1.1rem">%</small>');
+
+  // Calandra
+  calTemp = rndInt(192,210);
+  calPres = +(4.0+rnd(0,0.9)).toFixed(1);
+  calVel  = +(1.4+rnd(0,0.7)).toFixed(1);
+  const pct = ((calTemp-160)/(240-160))*100;
+  si('cal-tk',calTemp+'°C');
+  si('cal-prk',calPres);
+  si('cal-vk',calVel);
+  si('cal-temp-num',calTemp);
+  si('cal-prd',calPres+' bar');
+  si('cal-vld',calVel+' m/min');
+  si('cal-cyc',312+rndInt(0,3));
+  si('cal-tsup',(calTemp+rndInt(2,6))+'°C');
+  si('cal-tinf',(calTemp-rndInt(1,5))+'°C');
+  const ptr = document.getElementById('cal-ptr');
+  if(ptr) ptr.style.left=Math.max(2,Math.min(97,pct))+'%';
+  si('cal-pz',(624+rndInt(0,5)).toLocaleString('es-HN'));
+
+  // Plotter 1
+  p1Pg = Math.min(98,p1Pg+rnd(0,.4));
+  const p1v=+(40+rnd(0,5)).toFixed(1), p1t=rndInt(36,44);
+  si('p1-vel',p1v); si('p1-tmp',p1t+'°C'); si('p1-pg',Math.floor(p1Pg)+'%');
+  const pb1=document.getElementById('pb1'); if(pb1) pb1.style.width=Math.floor(p1Pg)+'%';
+  const e1=Math.floor((100-p1Pg)*.72); si('p1-eta','ETA: '+String(Math.floor(e1/60)).padStart(2,'0')+':'+String(e1%60).padStart(2,'0')+' min');
+
+  // Plotter 2
+  p2Pg = Math.min(94,p2Pg+rnd(0,.3));
+  const p2v=+(33+rnd(0,6)).toFixed(1), p2t=rndInt(38,47);
+  si('p2-vel',p2v); si('p2-tmp',p2t+'°C'); si('p2-pg',Math.floor(p2Pg)+'%');
+  const pb2=document.getElementById('pb2'); if(pb2) pb2.style.width=Math.floor(p2Pg)+'%';
+  const e2=Math.floor((100-p2Pg)*1.85); si('p2-eta','ETA: '+String(Math.floor(e2/60)).padStart(2,'0')+':'+String(e2%60).padStart(2,'0')+' min');
+
+  // Plotter KPIs
+  si('p-m2',(847+rnd(0,8)).toFixed(1));
+  si('p-vel',(38+rnd(0,4)).toFixed(1)+'<small style="font-size:1rem">m²/h</small>');
+
+  // Laser
+  lzPg=Math.min(94,lzPg+rnd(0,.3));
+  const lv=+(7.8+rnd(0,1.4)).toFixed(1), lp=rndInt(82,96), lt=rndInt(49,58);
+  si('lz-pt',lp+'<small>%</small>'); si('lz-vl',lv+'<small>m/min</small>');
+  si('lz-ptd',lp+' W'); si('lz-vld',lv+' m/min'); si('lz-th',lt+'°C');
+  si('lz-pgv',Math.floor(lzPg)+'%'); si('lz-dp',(2.7+rnd(0,1)).toFixed(1)+'<small>%</small>');
+  si('lz-dpd',(2.7+rnd(0,1)).toFixed(1)+'%');
+  const lpb=document.getElementById('lz-pgb'); if(lpb) lpb.style.width=Math.floor(lzPg)+'%';
+  const el=Math.floor((100-lzPg)*.92); si('lz-eta','ETA: 00:'+String(el).padStart(2,'0')+' min');
+
+  // Confección
+  si('cf-pz',(1241+rndInt(0,18)).toLocaleString('es-HN'));
+  si('cf-ef',(90+rnd(0,3)).toFixed(1)+'%');
+  si('cf-cy',(3.8+rnd(0,.7)).toFixed(1)+'<small>min</small>');
+
+  // Etiquetado
+  si('et-pz',(1198+rndInt(0,15)).toLocaleString('es-HN'));
+  si('et-pk',(847+rndInt(0,12)).toLocaleString('es-HN'));
+  si('et-er',(0.5+rnd(0,.6)).toFixed(1)+'<small>%</small>');
+  si('et-vl',rndInt(138,158)+'<small>u/hr</small>');
+
+  // QC
+  si('qc-ok',(1791+rndInt(0,12)).toLocaleString('es-HN'));
+  si('qc-idx',(96.4+rnd(0,1)).toFixed(1)+'<small>%</small>');
+
+  // Progress bars dashboard
+  const areas=['imp','cal','las','conf','etiq','emp'];
+  const base=[82,76,91,69,58,53];
+  areas.forEach((a,i)=>{
+    const v=Math.min(99,base[i]+rndInt(0,3));
+    const el=document.getElementById('pp-'+a), ev=document.getElementById('pp-'+a+'-v');
+    if(el) el.style.width=v+'%';
+    if(ev) ev.textContent=v+'%';
+  });
+
+  // Last updated
+  si('last-upd','● &nbsp;Hace 2s');
+}
+
+// ================================================================
+// NAVIGATION
+// ================================================================
+function goPage(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  const pg = document.getElementById(id);
+  if(pg) pg.classList.add('active');
+  el.classList.add('active');
+  setTimeout(()=>Object.values(charts).forEach(c=>{try{c.resize()}catch(e){}}), 50);
+}
+</script>
+</body>
+</html>
